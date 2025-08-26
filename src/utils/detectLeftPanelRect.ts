@@ -32,17 +32,49 @@ export async function detectLeftPanelRect(
   const cropWidth = Math.round(workingImage.width * 0.4);
   const cropped = workingImage.crop({ origin: { column: 0, row: 0 }, width: cropWidth, height: workingImage.height });
 
-  // 3. ★ Core Logic: Edge Detection
+  // 3. ★ Core Logic: Edge Detection with Optimized Parameters
   // Instead of thresholding, we find the panel's borders. This is more robust
   // against translucency and internal text/icons.
   const grey = cropped.grey();
+
   const edges = cannyEdgeDetector(grey, {
-    lowThreshold: 10,
-    highThreshold: 30,
-    gaussianBlurOptions: { sigma: 1.1 },
+    lowThreshold: 0.05,  // User-optimized value for detecting faint panel edges
+    highThreshold: 0.07, // User-optimized value - very sensitive
+    gaussianBlurOptions: { sigma: 0.1 }, // Minimal smoothing to preserve edge details
   });
 
-  console.log(edges);
+  // Check how many edges were detected and their intensity
+  const edgeData = (edges as any).data as Uint8Array;
+  let edgeCount = 0;
+  let minEdge = 255, maxEdge = 0;
+
+  for (let i = 0; i < edgeData.length; i++) {
+    if (edgeData[i] > 0) {
+      edgeCount++;
+      minEdge = Math.min(minEdge, edgeData[i]);
+      maxEdge = Math.max(maxEdge, edgeData[i]);
+    }
+  }
+
+  const edgePercentage = (edgeCount / edgeData.length) * 100;
+  console.log(`🔍 Edge detection: ${edgeCount} pixels (${edgePercentage.toFixed(2)}%) detected`);
+  console.log(`⚙️ Using optimized parameters: low=${0.05}, high=${0.07}, sigma=${0.1}`);
+
+  if (edgeCount > 0) {
+    console.log(`💡 Edge intensities: ${minEdge}-${maxEdge} (${minEdge < 50 ? 'faint but detectable edges' : 'strong edges'})`);
+  }
+
+  if (edgeCount === 0) {
+    console.log('❌ NO EDGES DETECTED! Suggestions:');
+    console.log('  - Try even lower thresholds (0.01, 0.05)');
+    console.log('  - Check image quality and panel visibility');
+    console.log('  - Verify panel exists in left 40% of image');
+    return null;
+  }
+
+  if (edgeCount > 0 && maxEdge < 100) {
+    console.log('✅ Faint edges detected successfully with optimized parameters');
+  }
 
   // 4. ★ Morphological Closing to Fill the Shape
   // We use a large kernel to connect the detected edges and fill the panel's

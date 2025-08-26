@@ -3,6 +3,7 @@ import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styled, { css } from 'styled-components';
 import { detectLeftPanelRect } from '../utils/detectLeftPanelRect';
+import ImageProcessingDebugger from '../components/ImageProcessingDebugger';
 
 // Styled Components
 const Wrapper = styled.div`
@@ -131,6 +132,7 @@ const AutoDetectButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-right: 1rem;
   
   &:hover {
     background-color: #d97706;
@@ -142,6 +144,29 @@ const AutoDetectButton = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+`
+
+const DebugToggleButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: #4b5563;
+    transform: translateY(-1px);
+  }
+`
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 `
 
 const PreviewSection = styled.div`
@@ -304,6 +329,7 @@ const ProfileCropping = ({ profileImageUrl, setCroppedImage, onNext, onBack }: P
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [aspect] = useState<number>(2.72 / 4.33); // Fixed aspect ratio 2.72:4.33
+  const [showDebugger, setShowDebugger] = useState<boolean>(false);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -357,9 +383,26 @@ const ProfileCropping = ({ profileImageUrl, setCroppedImage, onNext, onBack }: P
       y: rect?.y || 11.7,
       width: rect?.width || 22,
       height: rect?.height || 70,
-      //height: rect?.height || 77,
       unit: '%',
     })
+  };
+
+  const handleDebuggerResult = (result: { x: number; y: number; width: number; height: number } | null) => {
+    if (result && profileImageUrl) {
+      // Convert pixel coordinates to percentage for ReactCrop
+      const img = imgRef.current;
+      if (img) {
+        const percentageCrop = {
+          x: (result.x / img.naturalWidth) * 100,
+          y: (result.y / img.naturalHeight) * 100,
+          width: (result.width / img.naturalWidth) * 100,
+          height: (result.height / img.naturalHeight) * 100,
+          unit: '%' as const,
+        };
+        setCrop(percentageCrop);
+        console.log('Applied debugger result:', percentageCrop);
+      }
+    }
   };
 
   if (!profileImageUrl) {
@@ -388,10 +431,22 @@ const ProfileCropping = ({ profileImageUrl, setCroppedImage, onNext, onBack }: P
           <AutoDetectText>
             Use AI-powered edge detection to automatically find the optimal crop area
           </AutoDetectText>
-          <AutoDetectButton onClick={handleAutoDetect}>
-            Auto-Detect Crop Area (Coming Soon)
-          </AutoDetectButton>
+          <ButtonGroup>
+            <AutoDetectButton onClick={handleAutoDetect}>
+              Auto-Detect Crop Area
+            </AutoDetectButton>
+            <DebugToggleButton onClick={() => setShowDebugger(!showDebugger)}>
+              {showDebugger ? '🔍 Hide Debugger' : '🛠️ Show Algorithm Debugger'}
+            </DebugToggleButton>
+          </ButtonGroup>
         </AutoDetectSection>
+
+        {showDebugger && profileImageUrl && (
+          <ImageProcessingDebugger
+            imageDataUrl={profileImageUrl.dataUrl}
+            onResultChange={handleDebuggerResult}
+          />
+        )}
 
         <CropContainer>
           <CropArea>
