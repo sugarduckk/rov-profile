@@ -1,4 +1,5 @@
 import styled, { css } from 'styled-components';
+import Template from '../type/Template.type';
 
 const Wrapper = styled.div`
   width: 100vw;
@@ -14,14 +15,14 @@ const Wrapper = styled.div`
   @media (max-width: 480px) {
     padding: 1rem;
   }
-`
+`;
 
 const Container = styled.div`
   width: 100%;
   max-width: none;
   margin: 0;
   padding: 0;
-`
+`;
 
 const Header = styled.div`
   text-align: center;
@@ -34,7 +35,7 @@ const Header = styled.div`
   @media (max-width: 480px) {
     margin-bottom: 1.5rem;
   }
-`
+`;
 
 const Title = styled.h1`
   font-size: 2.5rem;
@@ -49,7 +50,7 @@ const Title = styled.h1`
   @media (max-width: 480px) {
     font-size: 1.75rem;
   }
-`
+`;
 
 const Subtitle = styled.p`
   font-size: 1.1rem;
@@ -59,7 +60,7 @@ const Subtitle = styled.p`
   @media (max-width: 480px) {
     font-size: 1rem;
   }
-`
+`;
 
 const ContentArea = styled.div`
   background: white;
@@ -75,7 +76,7 @@ const ContentArea = styled.div`
   @media (max-width: 480px) {
     padding: 1.5rem;
   }
-`
+`;
 
 const PlaceholderIcon = styled.div`
   font-size: 5rem;
@@ -86,7 +87,7 @@ const PlaceholderIcon = styled.div`
     font-size: 4rem;
     margin-bottom: 1.5rem;
   }
-`
+`;
 
 const PlaceholderText = styled.h3`
   color: #1e293b;
@@ -97,7 +98,7 @@ const PlaceholderText = styled.h3`
   @media (max-width: 480px) {
     font-size: 1.25rem;
   }
-`
+`;
 
 const PlaceholderSubtext = styled.p`
   color: #64748b;
@@ -111,7 +112,7 @@ const PlaceholderSubtext = styled.p`
   @media (max-width: 480px) {
     font-size: 0.95rem;
   }
-`
+`;
 
 const Footer = styled.div`
   display: flex;
@@ -125,9 +126,9 @@ const Footer = styled.div`
   @media (max-width: 480px) {
     margin-top: 2rem;
   }
-`
+`;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary'; }>`
   padding: 1rem 2rem;
   border: none;
   border-radius: 12px;
@@ -175,11 +176,11 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
       transform: translateY(-1px);
     }
   }
-`
+`;
 
 interface MappingFinalImageProps {
-  selectedTemplate: any; // Template type
-  profileImageUrl: { dataUrl: string; path: string } | null;
+  selectedTemplate: Template | null; // Template type
+  profileImageUrl: { dataUrl: string; path: string; } | null;
   croppedImage: Blob | null;
   onBack: () => void;
 }
