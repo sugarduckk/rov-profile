@@ -5,7 +5,12 @@ import {
   close,
   RoiMapManager,
   RoiKind,
+  Roi,
 } from 'image-js';
+
+const targetRatio = 0.628;
+const minAspectRatio = targetRatio * 0.98;
+const maxAspectRatio = targetRatio * 1.02;
 
 /**
  * Detects the large left-side rectangular panel in a game UI screenshot
@@ -16,7 +21,7 @@ import {
  */
 export async function detectLeftPanelRect(
   imageDataUrl: string
-): Promise<{ x: number; y: number; width: number; height: number } | null> {
+): Promise<{ x: number; y: number; width: number; height: number; } | null> {
   // 1. Load the image from the data URL
   let originalImage: Image;
   try {
@@ -29,7 +34,7 @@ export async function detectLeftPanelRect(
   // 2. Pre-process: Resize for performance and crop to the area of interest
   // We focus on the left 40% of the image, where the panel is located.
   const workingImage = originalImage.resize({ width: 1000 }); // Resize for consistent processing
-  const cropWidth = Math.round(workingImage.width * 0.4);
+  const cropWidth = Math.round(workingImage.width * 0.35);
   const cropped = workingImage.crop({ origin: { column: 0, row: 0 }, width: cropWidth, height: workingImage.height });
 
   // 3. ★ Core Logic: Edge Detection with Optimized Parameters
@@ -44,42 +49,28 @@ export async function detectLeftPanelRect(
   });
 
   // Check how many edges were detected and their intensity
-  const edgeData = (edges as any).data as Uint8Array;
+  const width = edges.width;
+  const height = edges.height;
   let edgeCount = 0;
-  let minEdge = 255, maxEdge = 0;
 
-  for (let i = 0; i < edgeData.length; i++) {
-    if (edgeData[i] > 0) {
-      edgeCount++;
-      minEdge = Math.min(minEdge, edgeData[i]);
-      maxEdge = Math.max(maxEdge, edgeData[i]);
+  for (let i = 0; i < width; i++) {
+    for (let j = 0; j < height; j++) {
+      const bit = edges.getBit(i, j);
+      if (bit > 0) {
+        edgeCount++;
+      }
     }
   }
 
-  const edgePercentage = (edgeCount / edgeData.length) * 100;
-  console.log(`🔍 Edge detection: ${edgeCount} pixels (${edgePercentage.toFixed(2)}%) detected`);
-  console.log(`⚙️ Using optimized parameters: low=${0.05}, high=${0.07}, sigma=${0.1}`);
-
-  if (edgeCount > 0) {
-    console.log(`💡 Edge intensities: ${minEdge}-${maxEdge} (${minEdge < 50 ? 'faint but detectable edges' : 'strong edges'})`);
-  }
-
   if (edgeCount === 0) {
-    console.log('❌ NO EDGES DETECTED! Suggestions:');
-    console.log('  - Try even lower thresholds (0.01, 0.05)');
-    console.log('  - Check image quality and panel visibility');
-    console.log('  - Verify panel exists in left 40% of image');
-    return null;
-  }
-
-  if (edgeCount > 0 && maxEdge < 100) {
-    console.log('✅ Faint edges detected successfully with optimized parameters');
+    console.log('❌ No edges detected');
+    return null;  // No edges detected
   }
 
   // 4. ★ Morphological Closing to Fill the Shape
   // We use a large kernel to connect the detected edges and fill the panel's
   // outline, turning it into a solid white shape.
-  const kernelSize = 21; // A large kernel is crucial for connecting the vertical edges
+  const kernelSize = 9; // A large kernel is crucial for connecting the vertical edges
   const kernel = Array(kernelSize).fill(Array(kernelSize).fill(1));
   const closedMask = close(edges, { kernel, iterations: 2 });
 
@@ -94,25 +85,32 @@ export async function detectLeftPanelRect(
 
   // 6. Filter and Score the ROIs to find the correct panel
   let bestPanel = null;
+  const candidates: Roi[] = [];
 
   for (const roi of rois) {
     // Basic properties of the ROI
     const { width, height, origin } = roi;
-    const area = roi.surface; // Use .surface for the actual pixel count
+    const area = width * height; // Use .surface for the actual pixel count
 
-    // ★ Apply a series of strict filters to disqualify invalid shapes
-    // Filter 1: Area. Must be a significant size.
-    if (area < cropped.width * cropped.height * 0.2) continue;
+    // Filter 1: Position. It must be located at the very left of the cropped image.
+    if (origin.column > cropped.width * 0.5) {
+      continue;
+    }
 
-    // Filter 2: Aspect Ratio. The panel must be taller than it is wide.
-    if (height / width < 1.5) continue;
+    // Filter 2: Area. Must be a significant size.
+    if (area >= cropped.width * cropped.height * 0.4) {
+      // If the area is large enough, we add it to the candidates.
+      candidates.push(roi);
+    }
+    else {
+      continue;
+    }
 
-    // Filter 3: Position. It must be located at the very left of the cropped image.
-    if (origin.column > 15) continue;
-
-    // Filter 4: Rectangularity. The ROI's area should be close to its bounding box area.
-    const rectangularity = area / (width * height);
-    if (rectangularity < 0.85) continue;
+    // Filter 3: Aspect Ratio. The panel must be taller than it is wide.
+    const aspectRatio = width / height;
+    if (aspectRatio < minAspectRatio || aspectRatio > maxAspectRatio) {
+      continue;
+    }
 
     // The largest ROI that passes all filters is our candidate.
     if (!bestPanel || area > bestPanel.surface) {
@@ -122,6 +120,33 @@ export async function detectLeftPanelRect(
 
   if (!bestPanel) {
     console.log('❌ No ROI passed all the filters.');
+    if (candidates.length > 0) {
+      let bestCandidate = null;
+      let bestCandidateArea = 0;
+      // Finding the largest candidate
+      for (const candidate of candidates) {
+        if (candidate.width * candidate.height > bestCandidateArea || bestCandidate === null) {
+          bestCandidate = candidate;
+          bestCandidateArea = candidate.width * candidate.height;
+        }
+      }
+      const origin = bestCandidate!.origin;
+      const height = bestCandidate!.height;
+      const width = height * targetRatio;
+
+      const scaleX = originalImage.width / workingImage.width;
+      const scaleY = originalImage.height / workingImage.height;
+
+      const finalRect = {
+        x: Math.round(origin.column * scaleX) * 100 / originalImage.width,
+        y: Math.round(origin.row * scaleY) * 100 / originalImage.height,
+        width: Math.round(width * scaleX) * 100 / originalImage.width,
+        height: Math.round(height * scaleY) * 100 / originalImage.height,
+      };
+
+      console.log('✅ Successfully detected candidate panel:', finalRect);
+      return finalRect;
+    }
     return null;
   }
 
@@ -130,10 +155,10 @@ export async function detectLeftPanelRect(
   const scaleY = originalImage.height / workingImage.height;
 
   const finalRect = {
-    x: Math.round(bestPanel.origin.column * scaleX),
-    y: Math.round(bestPanel.origin.row * scaleY),
-    width: Math.round(bestPanel.width * scaleX),
-    height: Math.round(bestPanel.height * scaleY),
+    x: Math.round(bestPanel.origin.column * scaleX) * 100 / originalImage.width,
+    y: Math.round(bestPanel.origin.row * scaleY) * 100 / originalImage.height,
+    width: Math.round(bestPanel.width * scaleX) * 100 / originalImage.width,
+    height: Math.round(bestPanel.height * scaleY) * 100 / originalImage.height,
   };
 
   console.log('✅ Successfully detected panel:', finalRect);
