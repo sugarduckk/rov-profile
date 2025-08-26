@@ -1,20 +1,22 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import Template from '../type/Template.type';
+import { theme, media } from '../theme';
+import Button from '../components/Button';
 
 const Wrapper = styled.div`
   width: 100vw;
   min-height: 100vh;
-  padding: 2rem;
-  background-color: #f8fafc;
+  padding: ${theme.spacing[4]};
+  background-color: ${theme.colors.background};
   box-sizing: border-box;
   
-  @media (max-width: 768px) {
-    padding: 1.5rem;
+  ${media.sm} {
+    padding: ${theme.spacing[6]};
   }
   
-  @media (max-width: 480px) {
-    padding: 1rem;
+  ${media.md} {
+    padding: ${theme.spacing[8]};
   }
 `;
 
@@ -27,54 +29,56 @@ const Container = styled.div`
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: ${theme.spacing[6]};
   
-  @media (max-width: 768px) {
-    margin-bottom: 2rem;
+  ${media.sm} {
+    margin-bottom: ${theme.spacing[8]};
   }
   
-  @media (max-width: 480px) {
-    margin-bottom: 1.5rem;
+  ${media.md} {
+    margin-bottom: ${theme.spacing[12]};
   }
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  font-size: ${theme.typography.fontSize['3xl']};
+  font-weight: ${theme.typography.fontWeight.bold};
+  color: ${theme.colors.gray[800]};
+  margin-bottom: ${theme.spacing[2]};
+  line-height: ${theme.typography.lineHeight.tight};
   
-  @media (max-width: 768px) {
-    font-size: 2rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize['4xl']};
   }
   
-  @media (max-width: 480px) {
-    font-size: 1.75rem;
+  ${media.md} {
+    font-size: ${theme.typography.fontSize['5xl']};
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 1.1rem;
-  color: #64748b;
+  font-size: ${theme.typography.fontSize.base};
+  color: ${theme.colors.gray[500]};
   margin: 0;
+  line-height: ${theme.typography.lineHeight.relaxed};
   
-  @media (max-width: 480px) {
-    font-size: 1rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.lg};
   }
 `;
 
 const ContentArea = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 3rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  background: ${theme.colors.surface};
+  border-radius: ${theme.borderRadius['2xl']};
+  padding: ${theme.spacing[6]};
+  box-shadow: ${theme.boxShadow.xl};
   
-  @media (max-width: 768px) {
-    padding: 2rem;
+  ${media.sm} {
+    padding: ${theme.spacing[8]};
   }
   
-  @media (max-width: 480px) {
-    padding: 1.5rem;
+  ${media.md} {
+    padding: ${theme.spacing[12]};
   }
 `;
 
@@ -82,27 +86,107 @@ const MappingArea = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: ${theme.spacing[6]};
+  
+  ${media.sm} {
+    gap: ${theme.spacing[8]};
+  }
 `;
 
 const CanvasContainer = styled.div`
   position: relative;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
+  border: 2px solid ${theme.colors.gray[200]};
+  border-radius: ${theme.borderRadius.xl};
   overflow: hidden;
-  background: #f8fafc;
+  background: ${theme.colors.gray[50]};
+  touch-action: none; /* Prevent scrolling when interacting with canvas */
 `;
 
 const ControlPanel = styled.div`
   width: 100%;
   max-width: 800px;
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: ${theme.colors.gray[50]};
+  border-radius: ${theme.borderRadius.xl};
+  padding: ${theme.spacing[4]};
+  
+  ${media.sm} {
+    padding: ${theme.spacing[6]};
+  }
+`;
+
+const ControlGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: ${theme.spacing[6]};
+  
+  ${media.sm} {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+const ControlsHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${theme.spacing[4]};
+  margin-bottom: ${theme.spacing[6]};
+`;
+
+const ControlTitle = styled.h3`
+  margin: 0;
+  color: ${theme.colors.gray[700]};
+  font-size: ${theme.typography.fontSize.lg};
+  font-weight: ${theme.typography.fontWeight.semibold};
+  text-align: center;
+`;
+
+const ToggleButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[2]};
+  padding: ${theme.spacing[2]} ${theme.spacing[4]};
+  background-color: ${theme.colors.gray[100]};
+  border: 1px solid ${theme.colors.gray[200]};
+  border-radius: ${theme.borderRadius.lg};
+  color: ${theme.colors.gray[700]};
+  font-size: ${theme.typography.fontSize.sm};
+  font-weight: ${theme.typography.fontWeight.medium};
+  cursor: pointer;
+  transition: all ${theme.animation.duration.normal} ${theme.animation.easing.ease};
+  min-height: ${theme.touchTarget.min};
+  
+  &:hover {
+    background-color: ${theme.colors.gray[200]};
+    border-color: ${theme.colors.gray[300]};
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+  
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.base};
+  }
+`;
+
+const ToggleIcon = styled.span<{ $isOpen: boolean; }>`
+  transition: transform ${theme.animation.duration.normal} ${theme.animation.easing.ease};
+  transform: ${({ $isOpen }) => $isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+  font-size: ${theme.typography.fontSize.sm};
+`;
+
+const SliderLabel = styled.div`
+  font-size: ${theme.typography.fontSize.xs};
+  color: ${theme.colors.gray[500]};
+  margin-bottom: ${theme.spacing[1]};
+  
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.sm};
+  }
 `;
 
 const ControlGroup = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: ${theme.spacing[6]};
   
   &:last-child {
     margin-bottom: 0;
@@ -111,15 +195,19 @@ const ControlGroup = styled.div`
 
 const ControlLabel = styled.label`
   display: block;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-weight: ${theme.typography.fontWeight.semibold};
+  color: ${theme.colors.gray[700]};
+  margin-bottom: ${theme.spacing[2]};
+  font-size: ${theme.typography.fontSize.sm};
+  
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.base};
+  }
 `;
 
 const ControlRow = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${theme.spacing[4]};
   align-items: center;
 `;
 
@@ -129,150 +217,140 @@ const SliderContainer = styled.div`
 
 const Slider = styled.input`
   width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #e2e8f0;
+  height: 8px;
+  border-radius: 4px;
+  background: ${theme.colors.gray[200]};
   outline: none;
   -webkit-appearance: none;
+  touch-action: none; /* Prevent page scrolling when dragging */
   
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #3b82f6;
+    background: ${theme.colors.primary[500]};
     cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 3px solid white;
+    box-shadow: ${theme.boxShadow.md};
+    transition: all ${theme.animation.duration.fast} ${theme.animation.easing.ease};
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: ${theme.boxShadow.lg};
+    }
+    
+    &:active {
+      transform: scale(1.2);
+    }
   }
   
   &::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #3b82f6;
+    background: ${theme.colors.primary[500]};
     cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 3px solid white;
+    box-shadow: ${theme.boxShadow.md};
+  }
+  
+  ${media.sm} {
+    &::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+    }
+    
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+    }
   }
 `;
 
 const ValueDisplay = styled.span`
-  font-size: 0.8rem;
-  color: #6b7280;
-  min-width: 40px;
+  font-size: ${theme.typography.fontSize.xs};
+  color: ${theme.colors.gray[500]};
+  min-width: 45px;
   text-align: right;
+  font-weight: ${theme.typography.fontWeight.medium};
+  
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.sm};
+    min-width: 40px;
+  }
 `;
 
 const PlaceholderIcon = styled.div`
-  font-size: 5rem;
-  margin-bottom: 2rem;
-  color: #3b82f6;
+  font-size: ${theme.typography.fontSize['5xl']};
+  margin-bottom: ${theme.spacing[6]};
+  color: ${theme.colors.primary[500]};
   text-align: center;
   
-  @media (max-width: 480px) {
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
+  ${media.sm} {
+    font-size: 5rem;
+    margin-bottom: ${theme.spacing[8]};
   }
 `;
 
 const PlaceholderText = styled.h3`
-  color: #1e293b;
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: ${theme.colors.gray[800]};
+  margin: 0 0 ${theme.spacing[4]} 0;
+  font-size: ${theme.typography.fontSize.xl};
+  font-weight: ${theme.typography.fontWeight.semibold};
   text-align: center;
   
-  @media (max-width: 480px) {
-    font-size: 1.25rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize['2xl']};
   }
 `;
 
 const PlaceholderSubtext = styled.p`
-  color: #64748b;
+  color: ${theme.colors.gray[500]};
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: ${theme.typography.fontSize.base};
+  line-height: ${theme.typography.lineHeight.relaxed};
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
   text-align: center;
   
-  @media (max-width: 480px) {
-    font-size: 0.95rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.lg};
   }
 `;
 
 const Footer = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 3rem;
+  gap: ${theme.spacing[4]};
+  margin-top: ${theme.spacing[8]};
   
-  @media (max-width: 768px) {
-    margin-top: 2.5rem;
+  /* Mobile: stack buttons vertically */
+  flex-direction: column;
+  align-items: center;
+  gap: ${theme.spacing[3]};
+  
+  ${media.sm} {
+    margin-top: ${theme.spacing[10]};
+    flex-direction: row;
+    gap: ${theme.spacing[4]};
   }
   
-  @media (max-width: 480px) {
-    margin-top: 2rem;
+  ${media.md} {
+    margin-top: ${theme.spacing[12]};
   }
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary'; }>`
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 180px;
-  
-  ${({ $variant = 'primary' }) => {
-    if ($variant === 'secondary') {
-      return css`
-        background-color: #6b7280;
-        color: white;
-        &:hover {
-          background-color: #4b5563;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-      `;
-    }
 
-    return css`
-      background-color: #3b82f6;
-      color: white;
-      &:hover {
-        background-color: #2563eb;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      }
-    `;
-  }}
-  
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    min-width: 160px;
-  }
-  
-  @media (max-width: 480px) {
-    width: 100%;
-    max-width: 280px;
-    &:hover {
-      transform: translateY(-1px);
-    }
-  }
-`;
 
 interface MappingFinalImageProps {
   selectedTemplate: Template | null; // Template type
   profileImageUrl: { dataUrl: string; path: string; } | null;
   croppedImage: Blob | null;
   onBack: () => void;
+  onReset: () => void;
 }
 
 interface Point {
@@ -287,7 +365,7 @@ interface MappingPoints {
   bottomRight: Point;
 }
 
-const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFinalImageProps) => {
+const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack, onReset }: MappingFinalImageProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const templateImageRef = useRef<HTMLImageElement>(null);
   const croppedImageRef = useRef<HTMLImageElement>(null);
@@ -295,6 +373,7 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
   const [templateLoaded, setTemplateLoaded] = useState(false);
   const [croppedImageLoaded, setCroppedImageLoaded] = useState(false);
   const [croppedImageUrl, setCroppedImageUrl] = useState<string>('');
+  const [showControls, setShowControls] = useState(false);
 
   // Initialize mapping points from template or use defaults
   const getInitialMappingPoints = (): MappingPoints => {
@@ -567,8 +646,11 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
           </ContentArea>
 
           <Footer>
-            <Button $variant="secondary" onClick={onBack}>
+            <Button variant="secondary" size="lg" fullWidth onClick={onBack}>
               ← Back to Cropping
+            </Button>
+            <Button variant="outline" size="lg" fullWidth onClick={onReset}>
+              🔄 Start Over
             </Button>
           </Footer>
         </Container>
@@ -623,139 +705,150 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
             </CanvasContainer>
 
             <ControlPanel>
-              <h3 style={{ margin: '0 0 1.5rem 0', color: '#374151', fontSize: '1.1rem', textAlign: 'center' }}>Mapping Controls</h3>
+              <ControlsHeader>
+                <ControlTitle>Fine-tune Position</ControlTitle>
+                <ToggleButton onClick={() => setShowControls(!showControls)}>
+                  <span>{showControls ? 'Hide' : 'Show'} Mapping Controls</span>
+                  <ToggleIcon $isOpen={showControls}>▼</ToggleIcon>
+                </ToggleButton>
+              </ControlsHeader>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                <ControlGroup>
-                  <ControlLabel>Top Left Corner</ControlLabel>
-                  <ControlRow>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>X Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.topLeft.x}
-                        onChange={(e) => updatePoint('topLeft', 'x', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.topLeft.x}%</ValueDisplay>
-                  </ControlRow>
-                  <ControlRow style={{ marginTop: '0.5rem' }}>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Y Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.topLeft.y}
-                        onChange={(e) => updatePoint('topLeft', 'y', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.topLeft.y}%</ValueDisplay>
-                  </ControlRow>
-                </ControlGroup>
+              {showControls && (
+                <ControlGrid>
+                  <ControlGroup>
+                    <ControlLabel>Top Left Corner</ControlLabel>
+                    <ControlRow>
+                      <SliderContainer>
+                        <SliderLabel>X Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.topLeft.x}
+                          onChange={(e) => updatePoint('topLeft', 'x', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.topLeft.x}%</ValueDisplay>
+                    </ControlRow>
+                    <ControlRow style={{ marginTop: '0.5rem' }}>
+                      <SliderContainer>
+                        <SliderLabel>Y Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.topLeft.y}
+                          onChange={(e) => updatePoint('topLeft', 'y', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.topLeft.y}%</ValueDisplay>
+                    </ControlRow>
+                  </ControlGroup>
 
-                <ControlGroup>
-                  <ControlLabel>Top Right Corner</ControlLabel>
-                  <ControlRow>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>X Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.topRight.x}
-                        onChange={(e) => updatePoint('topRight', 'x', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.topRight.x}%</ValueDisplay>
-                  </ControlRow>
-                  <ControlRow style={{ marginTop: '0.5rem' }}>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Y Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.topRight.y}
-                        onChange={(e) => updatePoint('topRight', 'y', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.topRight.y}%</ValueDisplay>
-                  </ControlRow>
-                </ControlGroup>
+                  <ControlGroup>
+                    <ControlLabel>Top Right Corner</ControlLabel>
+                    <ControlRow>
+                      <SliderContainer>
+                        <SliderLabel>X Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.topRight.x}
+                          onChange={(e) => updatePoint('topRight', 'x', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.topRight.x}%</ValueDisplay>
+                    </ControlRow>
+                    <ControlRow style={{ marginTop: '0.5rem' }}>
+                      <SliderContainer>
+                        <SliderLabel>Y Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.topRight.y}
+                          onChange={(e) => updatePoint('topRight', 'y', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.topRight.y}%</ValueDisplay>
+                    </ControlRow>
+                  </ControlGroup>
 
-                <ControlGroup>
-                  <ControlLabel>Bottom Left Corner</ControlLabel>
-                  <ControlRow>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>X Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.bottomLeft.x}
-                        onChange={(e) => updatePoint('bottomLeft', 'x', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.bottomLeft.x}%</ValueDisplay>
-                  </ControlRow>
-                  <ControlRow style={{ marginTop: '0.5rem' }}>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Y Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.bottomLeft.y}
-                        onChange={(e) => updatePoint('bottomLeft', 'y', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.bottomLeft.y}%</ValueDisplay>
-                  </ControlRow>
-                </ControlGroup>
+                  <ControlGroup>
+                    <ControlLabel>Bottom Left Corner</ControlLabel>
+                    <ControlRow>
+                      <SliderContainer>
+                        <SliderLabel>X Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.bottomLeft.x}
+                          onChange={(e) => updatePoint('bottomLeft', 'x', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.bottomLeft.x}%</ValueDisplay>
+                    </ControlRow>
+                    <ControlRow style={{ marginTop: '0.5rem' }}>
+                      <SliderContainer>
+                        <SliderLabel>Y Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.bottomLeft.y}
+                          onChange={(e) => updatePoint('bottomLeft', 'y', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.bottomLeft.y}%</ValueDisplay>
+                    </ControlRow>
+                  </ControlGroup>
 
-                <ControlGroup>
-                  <ControlLabel>Bottom Right Corner</ControlLabel>
-                  <ControlRow>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>X Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.bottomRight.x}
-                        onChange={(e) => updatePoint('bottomRight', 'x', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.bottomRight.x}%</ValueDisplay>
-                  </ControlRow>
-                  <ControlRow style={{ marginTop: '0.5rem' }}>
-                    <SliderContainer>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Y Position</div>
-                      <Slider
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={mappingPoints.bottomRight.y}
-                        onChange={(e) => updatePoint('bottomRight', 'y', Number(e.target.value))}
-                      />
-                    </SliderContainer>
-                    <ValueDisplay>{mappingPoints.bottomRight.y}%</ValueDisplay>
-                  </ControlRow>
-                </ControlGroup>
-              </div>
+                  <ControlGroup>
+                    <ControlLabel>Bottom Right Corner</ControlLabel>
+                    <ControlRow>
+                      <SliderContainer>
+                        <SliderLabel>X Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.bottomRight.x}
+                          onChange={(e) => updatePoint('bottomRight', 'x', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.bottomRight.x}%</ValueDisplay>
+                    </ControlRow>
+                    <ControlRow style={{ marginTop: '0.5rem' }}>
+                      <SliderContainer>
+                        <SliderLabel>Y Position</SliderLabel>
+                        <Slider
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={mappingPoints.bottomRight.y}
+                          onChange={(e) => updatePoint('bottomRight', 'y', Number(e.target.value))}
+                        />
+                      </SliderContainer>
+                      <ValueDisplay>{mappingPoints.bottomRight.y}%</ValueDisplay>
+                    </ControlRow>
+                  </ControlGroup>
+                </ControlGrid>
+              )}
             </ControlPanel>
           </MappingArea>
         </ContentArea>
 
         <Footer>
-          <Button $variant="secondary" onClick={onBack}>
+          <Button variant="primary" size="lg" fullWidth onClick={downloadFinalImage}>
+            📥 Download Final Image
+          </Button>
+          <Button variant="secondary" size="lg" fullWidth onClick={onBack}>
             ← Back to Cropping
           </Button>
-          <Button onClick={downloadFinalImage}>
-            📥 Download Final Image
+          <Button variant="outline" size="lg" fullWidth onClick={onReset}>
+            🔄 Start Over
           </Button>
         </Footer>
       </Container>

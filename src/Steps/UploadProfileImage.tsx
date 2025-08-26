@@ -1,241 +1,249 @@
 import { useState, useCallback } from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
+import { theme, media } from '../theme';
+import Button from '../components/Button';
 
 const Wrapper = styled.div`
   width: 100vw;
   min-height: 100vh;
-  padding: 2rem;
-  background-color: #f8fafc;
+  padding: ${theme.spacing[4]};
+  background-color: ${theme.colors.background};
   box-sizing: border-box;
   
-  @media (max-width: 768px) {
-    padding: 1.5rem;
+  ${media.sm} {
+    padding: ${theme.spacing[6]};
   }
   
-  @media (max-width: 480px) {
-    padding: 1rem;
+  ${media.md} {
+    padding: ${theme.spacing[8]};
   }
-`
+`;
 
 const Container = styled.div`
   width: 100%;
   max-width: none;
   margin: 0;
   padding: 0;
-`
+`;
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: ${theme.spacing[6]};
   
-  @media (max-width: 768px) {
-    margin-bottom: 2rem;
+  ${media.sm} {
+    margin-bottom: ${theme.spacing[8]};
   }
   
-  @media (max-width: 480px) {
-    margin-bottom: 1.5rem;
+  ${media.md} {
+    margin-bottom: ${theme.spacing[12]};
   }
-`
+`;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  font-size: ${theme.typography.fontSize['3xl']};
+  font-weight: ${theme.typography.fontWeight.bold};
+  color: ${theme.colors.gray[800]};
+  margin-bottom: ${theme.spacing[2]};
+  line-height: ${theme.typography.lineHeight.tight};
   
-  @media (max-width: 768px) {
-    font-size: 2rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize['4xl']};
   }
   
-  @media (max-width: 480px) {
-    font-size: 1.75rem;
+  ${media.md} {
+    font-size: ${theme.typography.fontSize['5xl']};
   }
-`
+`;
 
 const Subtitle = styled.p`
-  font-size: 1.1rem;
-  color: #64748b;
+  font-size: ${theme.typography.fontSize.base};
+  color: ${theme.colors.gray[500]};
   margin: 0;
+  line-height: ${theme.typography.lineHeight.relaxed};
   
-  @media (max-width: 480px) {
-    font-size: 1rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.lg};
   }
-`
+`;
 
-const UploadArea = styled.div<{ $isDragOver: boolean; $hasImage: boolean }>`
+const UploadArea = styled.div<{ $isDragOver: boolean; $hasImage: boolean; }>`
   border: 3px dashed ${({ $isDragOver, $hasImage }) =>
-    $hasImage ? '#3b82f6' : $isDragOver ? '#2563eb' : '#cbd5e1'};
-  border-radius: 16px;
-  padding: 3rem;
+    $hasImage ? theme.colors.primary[500] : $isDragOver ? theme.colors.primary[600] : theme.colors.gray[300]};
+  border-radius: ${theme.borderRadius['2xl']};
+  padding: ${theme.spacing[8]} ${theme.spacing[4]};
   text-align: center;
   background-color: ${({ $isDragOver, $hasImage }) =>
-    $hasImage ? '#eff6ff' : $isDragOver ? '#f0f9ff' : '#fff'};
+    $hasImage ? theme.colors.primary[50] : $isDragOver ? theme.colors.primary[50] : theme.colors.surface};
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 2rem;
+  transition: all ${theme.animation.duration.normal} ${theme.animation.easing.ease};
+  margin-bottom: ${theme.spacing[8]};
+  min-height: ${theme.touchTarget.comfortable};
   
   &:hover {
-    border-color: #3b82f6;
-    background-color: #f8fafc;
+    border-color: ${theme.colors.primary[500]};
+    background-color: ${theme.colors.gray[50]};
   }
   
-  @media (max-width: 480px) {
-    padding: 2rem 1rem;
+  &:active {
+    transform: scale(0.99);
   }
-`
+  
+  ${media.sm} {
+    padding: ${theme.spacing[12]} ${theme.spacing[8]};
+  }
+`;
 
 const UploadIcon = styled.div`
-  font-size: 4rem;
-  color: #94a3b8;
-  margin-bottom: 1rem;
+  font-size: ${theme.typography.fontSize['5xl']};
+  color: ${theme.colors.gray[400]};
+  margin-bottom: ${theme.spacing[4]};
   
-  @media (max-width: 480px) {
-    font-size: 3rem;
+  ${media.sm} {
+    font-size: 5rem;
   }
-`
+`;
 
 const UploadText = styled.p`
-  font-size: 1.2rem;
-  color: #475569;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+  font-size: ${theme.typography.fontSize.base};
+  color: ${theme.colors.gray[600]};
+  margin-bottom: ${theme.spacing[2]};
+  font-weight: ${theme.typography.fontWeight.semibold};
   
-  @media (max-width: 480px) {
-    font-size: 1rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.xl};
   }
-`
+`;
 
 const UploadSubtext = styled.p`
-  font-size: 0.95rem;
-  color: #64748b;
+  font-size: ${theme.typography.fontSize.sm};
+  color: ${theme.colors.gray[500]};
   margin: 0;
-`
+  
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.base};
+  }
+`;
 
 const HiddenInput = styled.input`
   display: none;
-`
+`;
 
 const PreviewContainer = styled.div`
   display: flex;
   justify-content: center;
-  margin-bottom: 2rem;
-`
+  margin-bottom: ${theme.spacing[8]};
+`;
+
+const PreviewImageContainer = styled.div`
+  background: ${theme.colors.surface};
+  border-radius: ${theme.borderRadius['2xl']};
+  padding: ${theme.spacing[6]};
+  box-shadow: ${theme.boxShadow.xl};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  
+  ${media.sm} {
+    padding: ${theme.spacing[8]};
+    max-width: 700px;
+  }
+  
+  ${media.md} {
+    max-width: 800px;
+  }
+`;
 
 const PreviewImage = styled.img`
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 500px;
+  max-height: 400px;
+  border-radius: ${theme.borderRadius.xl};
+  box-shadow: ${theme.boxShadow.lg};
   object-fit: contain;
+  margin-bottom: ${theme.spacing[6]};
   
-  @media (max-width: 480px) {
-    max-width: 250px;
-    max-height: 250px;
+  ${media.sm} {
+    max-height: 500px;
+    max-width: 600px;
   }
-`
+  
+  ${media.md} {
+    max-height: 600px;
+    max-width: 700px;
+  }
+`;
+
+const ImageTitle = styled.h3`
+  color: ${theme.colors.gray[800]};
+  font-size: ${theme.typography.fontSize.xl};
+  font-weight: ${theme.typography.fontWeight.semibold};
+  margin: 0 0 ${theme.spacing[2]} 0;
+  text-align: center;
+  
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize['2xl']};
+  }
+`;
+
+const ImageSubtext = styled.p`
+  color: ${theme.colors.gray[500]};
+  font-size: ${theme.typography.fontSize.base};
+  margin: 0 0 ${theme.spacing[4]} 0;
+  text-align: center;
+`;
 
 const RemoveButton = styled.button`
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #ef4444;
+  margin-top: ${theme.spacing[4]};
+  padding: ${theme.spacing[2]} ${theme.spacing[4]};
+  background-color: ${theme.colors.error[500]};
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: ${theme.borderRadius.lg};
+  font-size: ${theme.typography.fontSize.sm};
+  font-weight: ${theme.typography.fontWeight.medium};
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all ${theme.animation.duration.normal} ${theme.animation.easing.ease};
+  min-height: ${theme.touchTarget.min};
   
   &:hover {
-    background-color: #dc2626;
+    background-color: ${theme.colors.error[600]};
     transform: translateY(-1px);
   }
-`
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
 
 const Footer = styled.div`
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 3rem;
+  gap: ${theme.spacing[4]};
+  margin-top: ${theme.spacing[8]};
   
-  @media (max-width: 768px) {
-    margin-top: 2.5rem;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
+  ${media.sm} {
+    margin-top: ${theme.spacing[10]};
+    flex-direction: row;
+    gap: ${theme.spacing[4]};
   }
   
-  @media (max-width: 480px) {
-    margin-top: 2rem;
+  ${media.md} {
+    margin-top: ${theme.spacing[12]};
   }
-`
+  
+  /* Mobile: stack buttons vertically */
+  flex-direction: column;
+  align-items: center;
+  gap: ${theme.spacing[3]};
+`;
 
-const Button = styled.button<{ $disabled?: boolean; $variant?: 'primary' | 'secondary' }>`
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 200px;
-  
-  ${({ $disabled, $variant = 'primary' }) => {
-    if ($disabled) {
-      return css`
-        background-color: #94a3b8;
-        color: white;
-      `;
-    }
 
-    if ($variant === 'secondary') {
-      return css`
-        background-color: #6b7280;
-        color: white;
-        &:hover {
-          background-color: #4b5563;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-      `;
-    }
-
-    return css`
-      background-color: #3b82f6;
-      color: white;
-      &:hover {
-        background-color: #2563eb;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      }
-    `;
-  }}
-  
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    min-width: 180px;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.95rem;
-    min-width: 160px;
-    width: 100%;
-    max-width: 280px;
-    
-    ${({ $disabled }) => !$disabled && css`
-      &:hover {
-        transform: translateY(-1px);
-      }
-    `}
-  }
-`
 
 interface UploadProfileImageProps {
-  profileImageUrl: { dataUrl: string; path: string } | null;
-  setProfileImageUrl: (url: { dataUrl: string; path: string } | null) => void;
+  profileImageUrl: { dataUrl: string; path: string; } | null;
+  setProfileImageUrl: (url: { dataUrl: string; path: string; } | null) => void;
   onNext: () => void;
   onBack: () => void;
 }
@@ -284,8 +292,11 @@ const UploadProfileImage = ({ profileImageUrl, setProfileImageUrl, onNext, onBac
     setIsDragOver(false);
   };
 
-  const handleRemoveImage = () => {
+  const handleChooseDifferentImage = () => {
+    // Clear current image and open file browser
     setProfileImageUrl(null);
+    // Trigger file input click
+    document.getElementById('file-input')?.click();
   };
 
   const hasImage = profileImageUrl !== null;
@@ -314,22 +325,18 @@ const UploadProfileImage = ({ profileImageUrl, setProfileImageUrl, onNext, onBac
             <UploadSubtext>PNG, JPG, JPEG up to 10MB</UploadSubtext>
           </UploadArea>
         ) : (
-          <div>
-            <UploadArea $isDragOver={false} $hasImage={true}>
-              <UploadIcon>✅</UploadIcon>
-              <UploadText>Image uploaded successfully!</UploadText>
-              <UploadSubtext>Ready to proceed to the next step</UploadSubtext>
-            </UploadArea>
-
-            <PreviewContainer>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {profileImageUrl && <PreviewImage src={profileImageUrl.dataUrl} alt="Profile preview" />}
-                <RemoveButton onClick={handleRemoveImage}>
-                  Remove Image
-                </RemoveButton>
-              </div>
-            </PreviewContainer>
-          </div>
+          <PreviewContainer>
+            <PreviewImageContainer>
+              <ImageTitle>Your Profile Image</ImageTitle>
+              <ImageSubtext>Looking great! Ready to crop and position your image.</ImageSubtext>
+              {profileImageUrl && (
+                <PreviewImage src={profileImageUrl.dataUrl} alt="Profile preview" />
+              )}
+              <RemoveButton onClick={handleChooseDifferentImage}>
+                🗑️ Choose Different Image
+              </RemoveButton>
+            </PreviewImageContainer>
+          </PreviewContainer>
         )}
 
         <HiddenInput
@@ -341,13 +348,18 @@ const UploadProfileImage = ({ profileImageUrl, setProfileImageUrl, onNext, onBac
 
         <Footer>
           <Button
-            $variant="secondary"
+            variant="secondary"
+            size="lg"
+            fullWidth
             onClick={onBack}
           >
             ← Back to Templates
           </Button>
           <Button
-            $disabled={!hasImage}
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={!hasImage}
             onClick={hasImage ? onNext : undefined}
           >
             {hasImage ? 'Continue to Cropping' : 'Upload an Image'}

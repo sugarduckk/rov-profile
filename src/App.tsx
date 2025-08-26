@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import './App.css'
+import './App.css';
 import Step from './type/Step.type';
 import TemplateSelection from './Steps/TemplateSelection';
 import Template from './type/Template.type';
@@ -22,6 +22,14 @@ function App() {
     path: string;
   } | null>(null);
   const [croppedImage, setCroppedImage] = useState<Blob | null>(null);
+
+  const handleReset = () => {
+    // Reset all state and go back to template selection
+    setSelectedTemplate(null);
+    setProfileImageUrl(null);
+    setCroppedImage(null);
+    setStep(Step.SELECT_TEMPLATE);
+  };
 
   return (
     <AppWrapper>
@@ -54,10 +62,11 @@ function App() {
           profileImageUrl={profileImageUrl}
           croppedImage={croppedImage}
           onBack={() => setStep(Step.PROFILE_CROPPING)}
+          onReset={handleReset}
         />
       )}
     </AppWrapper>
-  )
+  );
 }
 
-export default App
+export default App;

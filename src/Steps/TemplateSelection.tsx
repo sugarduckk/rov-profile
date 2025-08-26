@@ -1,5 +1,6 @@
 import styled, { css } from 'styled-components';
 import template1 from '../assets/templates/1.png';
+import { media, theme } from '../theme';
 import Template from '../type/Template.type';
 
 const LayoutTemplates: Template[] = [
@@ -9,7 +10,7 @@ const LayoutTemplates: Template[] = [
     mapping: {
       topLeft: { x: 13, y: 11 },
       topRight: { x: 26, y: 23 },
-      bottomLeft: { x: 11, y: 87 },
+      bottomLeft: { x: 12, y: 87 },
       bottomRight: { x: 26, y: 80 }
     }
   },
@@ -19,7 +20,7 @@ const LayoutTemplates: Template[] = [
     mapping: {
       topLeft: { x: 13, y: 11 },
       topRight: { x: 26, y: 23 },
-      bottomLeft: { x: 11, y: 87 },
+      bottomLeft: { x: 12, y: 87 },
       bottomRight: { x: 26, y: 80 }
     }
   },
@@ -29,7 +30,7 @@ const LayoutTemplates: Template[] = [
     mapping: {
       topLeft: { x: 13, y: 11 },
       topRight: { x: 26, y: 23 },
-      bottomLeft: { x: 11, y: 87 },
+      bottomLeft: { x: 12, y: 87 },
       bottomRight: { x: 26, y: 80 }
     }
   }
@@ -37,17 +38,17 @@ const LayoutTemplates: Template[] = [
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: ${theme.spacing[4]};
   
-  @media (max-width: 640px) {
+  ${media.sm} {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    gap: ${theme.spacing[5]};
   }
   
-  @media (max-width: 320px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  ${media.md} {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: ${theme.spacing[6]};
   }
 `;
 
@@ -55,27 +56,59 @@ const GridItem = styled.div<{ $selected: boolean; }>`
   width: 100%;
   position: relative;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all ${theme.animation.duration.normal} ${theme.animation.easing.ease};
   aspect-ratio: 4/3;
+  border-radius: ${theme.borderRadius['2xl']};
+  overflow: hidden;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.04);
   
+  /* Mobile-first: smaller transforms for touch */
   ${({ $selected }) => $selected && css`
-    transform: scale(1.05);
+    transform: scale(1.02);
+    z-index: 1;
+    box-shadow: 
+      0 0 0 3px ${theme.colors.primary[500]},
+      0 0 0 6px ${theme.colors.primary[100]},
+      0 8px 32px -4px ${theme.colors.primary[500]}25,
+      0 16px 48px -8px ${theme.colors.primary[500]}15,
+      0 4px 20px -2px rgba(0, 0, 0, 0.12);
   `}
   
   &:hover {
-    transform: scale(1.02);
+    transform: scale(1.01);
+    box-shadow: 
+      0 4px 16px -2px rgba(0, 0, 0, 0.12),
+      0 8px 24px -4px rgba(0, 0, 0, 0.08),
+      0 2px 8px -2px ${theme.colors.primary[300]}20;
   }
   
-  @media (max-width: 480px) {
-    aspect-ratio: 16/10;
-    
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px -1px rgba(0, 0, 0, 0.1), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+  }
+  
+  ${media.sm} {
     ${({ $selected }) => $selected && css`
-      transform: scale(1.02);
+      transform: scale(1.05);
+      box-shadow: 
+        0 0 0 4px ${theme.colors.primary[500]},
+        0 0 0 8px ${theme.colors.primary[100]},
+        0 12px 40px -6px ${theme.colors.primary[500]}30,
+        0 20px 56px -12px ${theme.colors.primary[500]}18,
+        0 6px 24px -3px rgba(0, 0, 0, 0.15);
     `}
     
     &:hover {
-      transform: scale(1.01);
+      transform: scale(1.02);
+      box-shadow: 
+        0 6px 20px -3px rgba(0, 0, 0, 0.15),
+        0 10px 32px -6px rgba(0, 0, 0, 0.1),
+        0 3px 12px -2px ${theme.colors.primary[300]}25;
     }
+  }
+  
+  ${media.md} {
+    aspect-ratio: 4/3;
   }
 `;
 
@@ -83,52 +116,50 @@ const Image = styled.img<{ $selected: boolean; }>`
   width: 100%;
   height: 100%;
   object-fit: contain;
-  border: 3px solid transparent;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  
-  ${({ $selected }) => $selected && css`
-    border-color: #3b82f6;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 8px 25px rgba(0, 0, 0, 0.3);
-  `}
-  
-  &:hover {
-    border-color: #93c5fd;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  }
+  border: none;
+  border-radius: ${theme.borderRadius.xl};
+  transition: all ${theme.animation.duration.normal} ${theme.animation.easing.ease};
+  display: block;
 `;
 
 const CheckMark = styled.div`
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 32px;
-  height: 32px;
-  background-color: #3b82f6;
-  border-radius: 50%;
+  top: ${theme.spacing[2]};
+  right: ${theme.spacing[2]};
+  width: 36px;
+  height: 36px;
+  background-color: ${theme.colors.primary[500]};
+  border-radius: ${theme.borderRadius.full};
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: bold;
-  font-size: 18px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  z-index: 1;
+  font-weight: ${theme.typography.fontWeight.bold};
+  font-size: ${theme.typography.fontSize.lg};
+  box-shadow: ${theme.boxShadow.lg};
+  z-index: 2;
+  border: 2px solid white;
+  
+  ${media.sm} {
+    width: 32px;
+    height: 32px;
+    font-size: ${theme.typography.fontSize.base};
+  }
 `;
 
 const Wrapper = styled.div`
   width: 100vw;
   min-height: 100vh;
-  padding: 2rem;
-  background-color: #f8fafc;
+  padding: ${theme.spacing[4]};
+  background-color: ${theme.colors.background};
   box-sizing: border-box;
   
-  @media (max-width: 768px) {
-    padding: 1.5rem;
+  ${media.sm} {
+    padding: ${theme.spacing[6]};
   }
   
-  @media (max-width: 480px) {
-    padding: 1rem;
+  ${media.md} {
+    padding: ${theme.spacing[8]};
   }
 `;
 
@@ -141,97 +172,47 @@ const Container = styled.div`
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: ${theme.spacing[6]};
   
-  @media (max-width: 768px) {
-    margin-bottom: 2rem;
+  ${media.sm} {
+    margin-bottom: ${theme.spacing[8]};
   }
   
-  @media (max-width: 480px) {
-    margin-bottom: 1.5rem;
+  ${media.md} {
+    margin-bottom: ${theme.spacing[12]};
   }
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  font-size: ${theme.typography.fontSize['3xl']};
+  font-weight: ${theme.typography.fontWeight.bold};
+  color: ${theme.colors.gray[800]};
+  margin-bottom: ${theme.spacing[2]};
+  line-height: ${theme.typography.lineHeight.tight};
   
-  @media (max-width: 768px) {
-    font-size: 2rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize['4xl']};
   }
   
-  @media (max-width: 480px) {
-    font-size: 1.75rem;
+  ${media.md} {
+    font-size: ${theme.typography.fontSize['5xl']};
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 1.1rem;
-  color: #64748b;
+  font-size: ${theme.typography.fontSize.base};
+  color: ${theme.colors.gray[500]};
   margin: 0;
+  line-height: ${theme.typography.lineHeight.relaxed};
   
-  @media (max-width: 480px) {
-    font-size: 1rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.lg};
   }
 `;
 
-const Footer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: 3rem;
-  
-  @media (max-width: 768px) {
-    margin-top: 2.5rem;
-  }
-  
-  @media (max-width: 480px) {
-    margin-top: 2rem;
-  }
-`;
 
-const NextButton = styled.button<{ $disabled: boolean; }>`
-  padding: 1rem 2rem;
-  background-color: ${({ $disabled }) => $disabled ? '#94a3b8' : '#3b82f6'};
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 200px;
-  
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    min-width: 180px;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.95rem;
-    min-width: 160px;
-    width: 100%;
-    max-width: 280px;
-  }
-  
-  ${({ $disabled }) => !$disabled && css`
-    &:hover {
-      background-color: #2563eb;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    }
-    
-    @media (max-width: 480px) {
-      &:hover {
-        transform: translateY(-1px);
-      }
-    }
-  `}
-`;
+
+
 
 interface TemplateSelectionProps {
   selectedTemplate: Template | null;
@@ -240,7 +221,13 @@ interface TemplateSelectionProps {
 }
 
 const TemplateSelection = ({ selectedTemplate, setSelectedTemplate, onNext }: TemplateSelectionProps) => {
-  const hasSelection = selectedTemplate !== null;
+  const handleTemplateSelect = (template: Template) => {
+    setSelectedTemplate(template);
+    // Auto-advance to next step after a short delay for visual feedback
+    setTimeout(() => {
+      onNext();
+    }, 300);
+  };
 
   return (
     <Wrapper>
@@ -254,22 +241,13 @@ const TemplateSelection = ({ selectedTemplate, setSelectedTemplate, onNext }: Te
           {LayoutTemplates.map((template) => {
             const isSelected = selectedTemplate?.name === template.name;
             return (
-              <GridItem key={template.name} onClick={() => setSelectedTemplate(template)} $selected={isSelected}>
+              <GridItem key={template.name} onClick={() => handleTemplateSelect(template)} $selected={isSelected}>
                 <Image src={template.image} alt={template.name} $selected={isSelected} />
                 {isSelected && <CheckMark>✓</CheckMark>}
               </GridItem>
             );
           })}
         </Grid>
-
-        <Footer>
-          <NextButton
-            $disabled={!hasSelection}
-            onClick={hasSelection ? onNext : undefined}
-          >
-            {hasSelection ? 'Continue to Upload' : 'Select a Template'}
-          </NextButton>
-        </Footer>
       </Container>
     </Wrapper>
   );

@@ -1,23 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { detectLeftPanelRect } from '../utils/detectLeftPanelRect';
+import { theme, media } from '../theme';
+import Button from '../components/Button';
 
 // Styled Components
 const Wrapper = styled.div`
   width: 100vw;
   min-height: 100vh;
-  padding: 2rem;
-  background-color: #f8fafc;
+  padding: ${theme.spacing[4]};
+  background-color: ${theme.colors.background};
   box-sizing: border-box;
   
-  @media (max-width: 768px) {
-    padding: 1.5rem;
+  ${media.sm} {
+    padding: ${theme.spacing[6]};
   }
   
-  @media (max-width: 480px) {
-    padding: 1rem;
+  ${media.md} {
+    padding: ${theme.spacing[8]};
   }
 `;
 
@@ -30,55 +32,57 @@ const Container = styled.div`
 
 const Header = styled.div`
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: ${theme.spacing[6]};
   
-  @media (max-width: 768px) {
-    margin-bottom: 2rem;
+  ${media.sm} {
+    margin-bottom: ${theme.spacing[8]};
   }
   
-  @media (max-width: 480px) {
-    margin-bottom: 1.5rem;
+  ${media.md} {
+    margin-bottom: ${theme.spacing[12]};
   }
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
+  font-size: ${theme.typography.fontSize['3xl']};
+  font-weight: ${theme.typography.fontWeight.bold};
+  color: ${theme.colors.gray[800]};
+  margin-bottom: ${theme.spacing[2]};
+  line-height: ${theme.typography.lineHeight.tight};
   
-  @media (max-width: 768px) {
-    font-size: 2rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize['4xl']};
   }
   
-  @media (max-width: 480px) {
-    font-size: 1.75rem;
+  ${media.md} {
+    font-size: ${theme.typography.fontSize['5xl']};
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 1.1rem;
-  color: #64748b;
+  font-size: ${theme.typography.fontSize.base};
+  color: ${theme.colors.gray[500]};
   margin: 0;
+  line-height: ${theme.typography.lineHeight.relaxed};
   
-  @media (max-width: 480px) {
-    font-size: 1rem;
+  ${media.sm} {
+    font-size: ${theme.typography.fontSize.lg};
   }
 `;
 
 const CropContainer = styled.div`
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  background: ${theme.colors.surface};
+  border-radius: ${theme.borderRadius['2xl']};
+  padding: 0;
+  box-shadow: ${theme.boxShadow.xl};
+  margin-bottom: ${theme.spacing[8]};
   
-  @media (max-width: 768px) {
-    padding: 1.5rem;
+  ${media.sm} {
+    padding: ${theme.spacing[6]};
   }
   
-  @media (max-width: 480px) {
-    padding: 1rem;
+  ${media.md} {
+    padding: ${theme.spacing[8]};
   }
 `;
 
@@ -88,13 +92,47 @@ const CropArea = styled.div`
   
   .ReactCrop {
     max-width: 100%;
-    max-height: 500px;
+    max-height: 400px;
+    
+    ${media.sm} {
+      max-height: 500px;
+    }
+    
+    ${media.md} {
+      max-height: 600px;
+    }
   }
   
   .ReactCrop__image {
     max-width: 100%;
-    max-height: 500px;
+    max-height: 400px;
     object-fit: contain;
+    border-radius: ${theme.borderRadius.lg};
+    
+    ${media.sm} {
+      max-height: 500px;
+    }
+    
+    ${media.md} {
+      max-height: 600px;
+    }
+  }
+  
+  /* Improve crop handle visibility on mobile */
+  .ReactCrop__crop-selection {
+    border: 2px solid ${theme.colors.primary[500]};
+  }
+  
+  .ReactCrop__drag-handle {
+    background-color: ${theme.colors.primary[500]};
+    border: 2px solid white;
+    width: 20px;
+    height: 20px;
+    
+    ${media.sm} {
+      width: 16px;
+      height: 16px;
+    }
   }
 `;
 
@@ -109,108 +147,62 @@ const PreviewSection = styled.div`
 `;
 
 const PreviewBox = styled.div`
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 2rem;
+  background: ${theme.colors.surface};
+  border: 1px solid ${theme.colors.gray[200]};
+  border-radius: ${theme.borderRadius.xl};
+  padding: ${theme.spacing[6]};
   text-align: center;
   max-width: 600px;
   width: 100%;
   
-  @media (max-width: 768px) {
+  ${media.sm} {
     max-width: 500px;
-    padding: 1.5rem;
+    padding: ${theme.spacing[6]};
   }
   
-  @media (max-width: 480px) {
-    max-width: none;
-    padding: 1.25rem;
+  ${media.md} {
+    max-width: 600px;
+    padding: ${theme.spacing[8]};
   }
 `;
 
 const PreviewTitle = styled.h3`
-  color: #374151;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: ${theme.colors.gray[700]};
+  margin: 0 0 ${theme.spacing[6]} 0;
+  font-size: ${theme.typography.fontSize.xl};
+  font-weight: ${theme.typography.fontWeight.semibold};
 `;
 
 const PreviewCanvas = styled.canvas`
   max-width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid ${theme.colors.gray[200]};
+  border-radius: ${theme.borderRadius.lg};
+  touch-action: none; /* Prevent scrolling when touching canvas */
 `;
 
 const Footer = styled.div`
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 3rem;
+  gap: ${theme.spacing[4]};
+  margin-top: ${theme.spacing[8]};
   
-  @media (max-width: 768px) {
-    margin-top: 2.5rem;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
+  /* Mobile: stack buttons vertically */
+  flex-direction: column;
+  align-items: center;
+  gap: ${theme.spacing[3]};
+  
+  ${media.sm} {
+    margin-top: ${theme.spacing[10]};
+    flex-direction: row;
+    gap: ${theme.spacing[4]};
+  }
+  
+  ${media.md} {
+    margin-top: ${theme.spacing[12]};
   }
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary'; $disabled?: boolean; }>`
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 180px;
-  
-  ${({ $variant = 'primary', $disabled }) => {
-    if ($disabled) {
-      return css`
-        background-color: #94a3b8;
-        color: white;
-      `;
-    }
 
-    if ($variant === 'secondary') {
-      return css`
-        background-color: #6b7280;
-        color: white;
-        &:hover {
-          background-color: #4b5563;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-      `;
-    }
-
-    return css`
-      background-color: #3b82f6;
-      color: white;
-      &:hover {
-        background-color: #2563eb;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      }
-    `;
-  }}
-  
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    min-width: 160px;
-  }
-  
-  @media (max-width: 480px) {
-    width: 100%;
-    max-width: 280px;
-    &:hover {
-      transform: translateY(-1px);
-    }
-  }
-`;
 
 // Types
 interface ProfileCroppingProps {
@@ -388,11 +380,11 @@ const ProfileCropping = ({ profileImageUrl, setCroppedImage, onNext, onBack }: P
         </PreviewSection>
 
         <Footer>
-          <Button $variant="secondary" onClick={onBack}>
-            ← Back to Upload
-          </Button>
-          <Button onClick={handleNext}>
+          <Button variant="primary" size="lg" fullWidth onClick={handleNext}>
             Continue to Final Mapping
+          </Button>
+          <Button variant="secondary" size="lg" fullWidth onClick={onBack}>
+            ← Back to Upload
           </Button>
         </Footer>
       </Container>
