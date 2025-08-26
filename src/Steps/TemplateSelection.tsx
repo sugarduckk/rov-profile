@@ -6,16 +6,34 @@ const LayoutTemplates: Template[] = [
   {
     name: 'Template 1',
     image: template1,
+    mapping: {
+      topLeft: { x: 13, y: 11 },
+      topRight: { x: 26, y: 23 },
+      bottomLeft: { x: 11, y: 87 },
+      bottomRight: { x: 26, y: 80 }
+    }
   },
   {
     name: 'Template 2',
     image: template1,
+    mapping: {
+      topLeft: { x: 13, y: 11 },
+      topRight: { x: 26, y: 23 },
+      bottomLeft: { x: 11, y: 87 },
+      bottomRight: { x: 26, y: 80 }
+    }
   },
   {
     name: 'Template 3',
     image: template1,
+    mapping: {
+      topLeft: { x: 13, y: 11 },
+      topRight: { x: 26, y: 23 },
+      bottomLeft: { x: 11, y: 87 },
+      bottomRight: { x: 26, y: 80 }
+    }
   }
-]
+];
 
 const Grid = styled.div`
   display: grid;
@@ -31,9 +49,9 @@ const Grid = styled.div`
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-`
+`;
 
-const GridItem = styled.div<{ $selected: boolean }>`
+const GridItem = styled.div<{ $selected: boolean; }>`
   width: 100%;
   position: relative;
   cursor: pointer;
@@ -59,9 +77,9 @@ const GridItem = styled.div<{ $selected: boolean }>`
       transform: scale(1.01);
     }
   }
-`
+`;
 
-const Image = styled.img<{ $selected: boolean }>`
+const Image = styled.img<{ $selected: boolean; }>`
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -78,7 +96,7 @@ const Image = styled.img<{ $selected: boolean }>`
     border-color: #93c5fd;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
-`
+`;
 
 const CheckMark = styled.div`
   position: absolute;
@@ -96,7 +114,7 @@ const CheckMark = styled.div`
   font-size: 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   z-index: 1;
-`
+`;
 
 const Wrapper = styled.div`
   width: 100vw;
@@ -112,14 +130,14 @@ const Wrapper = styled.div`
   @media (max-width: 480px) {
     padding: 1rem;
   }
-`
+`;
 
 const Container = styled.div`
   width: 100%;
   max-width: none;
   margin: 0;
   padding: 0;
-`
+`;
 
 const Header = styled.div`
   text-align: center;
@@ -132,7 +150,7 @@ const Header = styled.div`
   @media (max-width: 480px) {
     margin-bottom: 1.5rem;
   }
-`
+`;
 
 const Title = styled.h1`
   font-size: 2.5rem;
@@ -147,7 +165,7 @@ const Title = styled.h1`
   @media (max-width: 480px) {
     font-size: 1.75rem;
   }
-`
+`;
 
 const Subtitle = styled.p`
   font-size: 1.1rem;
@@ -157,7 +175,7 @@ const Subtitle = styled.p`
   @media (max-width: 480px) {
     font-size: 1rem;
   }
-`
+`;
 
 const Footer = styled.div`
   display: flex;
@@ -171,9 +189,9 @@ const Footer = styled.div`
   @media (max-width: 480px) {
     margin-top: 2rem;
   }
-`
+`;
 
-const NextButton = styled.button<{ $disabled: boolean }>`
+const NextButton = styled.button<{ $disabled: boolean; }>`
   padding: 1rem 2rem;
   background-color: ${({ $disabled }) => $disabled ? '#94a3b8' : '#3b82f6'};
   color: white;
@@ -213,7 +231,7 @@ const NextButton = styled.button<{ $disabled: boolean }>`
       }
     }
   `}
-`
+`;
 
 interface TemplateSelectionProps {
   selectedTemplate: Template | null;
@@ -255,6 +273,6 @@ const TemplateSelection = ({ selectedTemplate, setSelectedTemplate, onNext }: Te
       </Container>
     </Wrapper>
   );
-}
+};
 
 export default TemplateSelection;

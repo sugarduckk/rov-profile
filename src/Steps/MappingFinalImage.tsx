@@ -296,13 +296,27 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
   const [croppedImageLoaded, setCroppedImageLoaded] = useState(false);
   const [croppedImageUrl, setCroppedImageUrl] = useState<string>('');
 
-  // Default mapping points (as percentages of canvas size)
-  const [mappingPoints, setMappingPoints] = useState<MappingPoints>({
-    topLeft: { x: 20, y: 20 },
-    topRight: { x: 80, y: 20 },
-    bottomLeft: { x: 20, y: 80 },
-    bottomRight: { x: 80, y: 80 }
-  });
+  // Initialize mapping points from template or use defaults
+  const getInitialMappingPoints = (): MappingPoints => {
+    if (selectedTemplate?.mapping) {
+      return {
+        topLeft: selectedTemplate.mapping.topLeft,
+        topRight: selectedTemplate.mapping.topRight,
+        bottomLeft: selectedTemplate.mapping.bottomLeft,
+        bottomRight: selectedTemplate.mapping.bottomRight
+      };
+    }
+
+    // Fallback to default values if no template mapping
+    return {
+      topLeft: { x: 20, y: 20 },
+      topRight: { x: 80, y: 20 },
+      bottomLeft: { x: 20, y: 80 },
+      bottomRight: { x: 80, y: 80 }
+    };
+  };
+
+  const [mappingPoints, setMappingPoints] = useState<MappingPoints>(getInitialMappingPoints());
 
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 600 });
 
@@ -314,6 +328,18 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
       return () => URL.revokeObjectURL(url);
     }
   }, [croppedImage]);
+
+  // Update mapping points when template changes
+  useEffect(() => {
+    if (selectedTemplate?.mapping) {
+      setMappingPoints({
+        topLeft: selectedTemplate.mapping.topLeft,
+        topRight: selectedTemplate.mapping.topRight,
+        bottomLeft: selectedTemplate.mapping.bottomLeft,
+        bottomRight: selectedTemplate.mapping.bottomRight
+      });
+    }
+  }, [selectedTemplate]);
 
   // Perspective transformation function
   const drawPerspectiveImage = useCallback(() => {
@@ -337,32 +363,135 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
       bottomRight: { x: (mappingPoints.bottomRight.x / 100) * canvas.width, y: (mappingPoints.bottomRight.y / 100) * canvas.height }
     };
 
-    // Draw the cropped image with perspective transformation
-    ctx.save();
+    // Draw the cropped image with mesh-based perspective transformation
+    // This creates a smooth, natural warping without visible gaps
 
-    // Create a path for the perspective quad
-    ctx.beginPath();
-    ctx.moveTo(points.topLeft.x, points.topLeft.y);
-    ctx.lineTo(points.topRight.x, points.topRight.y);
-    ctx.lineTo(points.bottomRight.x, points.bottomRight.y);
-    ctx.lineTo(points.bottomLeft.x, points.bottomLeft.y);
-    ctx.closePath();
-    ctx.clip();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
-    // For now, we'll use a simple transform approximation
-    // This is a simplified perspective transform - for more accurate results,
-    // you'd need to implement a full perspective transformation matrix
-    const scaleX = (points.topRight.x - points.topLeft.x) / croppedImg.width;
-    const scaleY = (points.bottomLeft.y - points.topLeft.y) / croppedImg.height;
+    // Set composite operation to help blend overlapping areas
+    ctx.globalCompositeOperation = 'source-over';
 
-    ctx.setTransform(
-      scaleX, 0, 0, scaleY,
-      points.topLeft.x, points.topLeft.y
-    );
+    const TL = points.topLeft;
+    const TR = points.topRight;
+    const BL = points.bottomLeft;
+    const BR = points.bottomRight;
 
-    ctx.drawImage(croppedImg, 0, 0);
+    // Bilinear interpolation from unit square (s,t) to destination quad
+    const interpolateQuad = (s: number, t: number) => {
+      const x = (1 - s) * (1 - t) * TL.x + s * (1 - t) * TR.x + (1 - s) * t * BL.x + s * t * BR.x;
+      const y = (1 - s) * (1 - t) * TL.y + s * (1 - t) * TR.y + (1 - s) * t * BL.y + s * t * BR.y;
+      return { x, y };
+    };
 
-    ctx.restore();
+    // Calculate affine transform matrix for triangle mapping
+    const calculateTriangleTransform = (
+      src: { x: number; y: number; }[],
+      dst: { x: number; y: number; }[]
+    ) => {
+      const [s0, s1, s2] = src;
+      const [d0, d1, d2] = dst;
+
+      const denom = s0.x * (s1.y - s2.y) + s1.x * (s2.y - s0.y) + s2.x * (s0.y - s1.y);
+      if (Math.abs(denom) < 1e-10) return null; // Degenerate triangle
+
+      const a = (d0.x * (s1.y - s2.y) + d1.x * (s2.y - s0.y) + d2.x * (s0.y - s1.y)) / denom;
+      const b = (d0.y * (s1.y - s2.y) + d1.y * (s2.y - s0.y) + d2.y * (s0.y - s1.y)) / denom;
+      const c = (d0.x * (s2.x - s1.x) + d1.x * (s0.x - s2.x) + d2.x * (s1.x - s0.x)) / denom;
+      const d = (d0.y * (s2.x - s1.x) + d1.y * (s0.x - s2.x) + d2.y * (s1.x - s0.x)) / denom;
+      const e = (d0.x * (s1.x * s2.y - s2.x * s1.y) + d1.x * (s2.x * s0.y - s0.x * s2.y) + d2.x * (s0.x * s1.y - s1.x * s0.y)) / denom;
+      const f = (d0.y * (s1.x * s2.y - s2.x * s1.y) + d1.y * (s2.x * s0.y - s0.x * s2.y) + d2.y * (s0.x * s1.y - s1.x * s0.y)) / denom;
+
+      return { a, b, c, d, e, f };
+    };
+
+    const imgWidth = croppedImg.naturalWidth || croppedImg.width;
+    const imgHeight = croppedImg.naturalHeight || croppedImg.height;
+
+    // Use smaller subdivision with significant overlap for gap-free rendering
+    const SUBDIVISIONS = 24;
+    const OVERLAP_PERCENT = 0.02; // 2% overlap in UV space
+
+    // Draw overlapping quads to completely eliminate gaps
+    for (let row = 0; row < SUBDIVISIONS; row++) {
+      for (let col = 0; col < SUBDIVISIONS; col++) {
+        const s0 = col / SUBDIVISIONS;
+        const s1 = (col + 1) / SUBDIVISIONS;
+        const t0 = row / SUBDIVISIONS;
+        const t1 = (row + 1) / SUBDIVISIONS;
+
+        // Add significant overlap to ensure no gaps
+        const s0Expanded = Math.max(0, s0 - OVERLAP_PERCENT);
+        const s1Expanded = Math.min(1, s1 + OVERLAP_PERCENT);
+        const t0Expanded = Math.max(0, t0 - OVERLAP_PERCENT);
+        const t1Expanded = Math.min(1, t1 + OVERLAP_PERCENT);
+
+        // Source rectangle in image coordinates
+        const srcX = s0Expanded * imgWidth;
+        const srcY = t0Expanded * imgHeight;
+        const srcW = (s1Expanded - s0Expanded) * imgWidth;
+        const srcH = (t1Expanded - t0Expanded) * imgHeight;
+
+        // Destination quad corners
+        const dstTL = interpolateQuad(s0Expanded, t0Expanded);
+        const dstTR = interpolateQuad(s1Expanded, t0Expanded);
+        const dstBL = interpolateQuad(s0Expanded, t1Expanded);
+        const dstBR = interpolateQuad(s1Expanded, t1Expanded);
+
+        // Draw the quad using two triangles with proper perspective
+        // Triangle 1: TL -> TR -> BR
+        const srcTri1 = [
+          { x: srcX, y: srcY },
+          { x: srcX + srcW, y: srcY },
+          { x: srcX + srcW, y: srcY + srcH }
+        ];
+        const dstTri1 = [dstTL, dstTR, dstBR];
+
+        const transform1 = calculateTriangleTransform(srcTri1, dstTri1);
+        if (transform1) {
+          ctx.save();
+
+          // Create expanded clipping path to eliminate gaps
+          const expansion = 2;
+          ctx.beginPath();
+          ctx.moveTo(dstTri1[0].x - expansion, dstTri1[0].y - expansion);
+          ctx.lineTo(dstTri1[1].x + expansion, dstTri1[1].y - expansion);
+          ctx.lineTo(dstTri1[2].x + expansion, dstTri1[2].y + expansion);
+          ctx.closePath();
+          ctx.clip();
+
+          ctx.setTransform(transform1.a, transform1.b, transform1.c, transform1.d, transform1.e, transform1.f);
+          ctx.drawImage(croppedImg, 0, 0);
+          ctx.restore();
+        }
+
+        // Triangle 2: TL -> BR -> BL
+        const srcTri2 = [
+          { x: srcX, y: srcY },
+          { x: srcX + srcW, y: srcY + srcH },
+          { x: srcX, y: srcY + srcH }
+        ];
+        const dstTri2 = [dstTL, dstBR, dstBL];
+
+        const transform2 = calculateTriangleTransform(srcTri2, dstTri2);
+        if (transform2) {
+          ctx.save();
+
+          // Create expanded clipping path to eliminate gaps
+          const expansion = 2;
+          ctx.beginPath();
+          ctx.moveTo(dstTri2[0].x - expansion, dstTri2[0].y - expansion);
+          ctx.lineTo(dstTri2[1].x + expansion, dstTri2[1].y + expansion);
+          ctx.lineTo(dstTri2[2].x - expansion, dstTri2[2].y + expansion);
+          ctx.closePath();
+          ctx.clip();
+
+          ctx.setTransform(transform2.a, transform2.b, transform2.c, transform2.d, transform2.e, transform2.f);
+          ctx.drawImage(croppedImg, 0, 0);
+          ctx.restore();
+        }
+      }
+    }
 
     // Draw template at exact canvas size (1:1 ratio)
     ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
@@ -400,6 +529,25 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
       }
     }));
   };
+
+  const downloadFinalImage = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Create a download link
+    const link = document.createElement('a');
+    link.download = `profile-mapping-${selectedTemplate?.name || 'template'}-${Date.now()}.png`;
+
+    // Convert canvas to blob and create download URL
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    }, 'image/png', 1.0);
+  }, [selectedTemplate?.name]);
 
   if (!selectedTemplate || !croppedImage) {
     return (
@@ -605,6 +753,9 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack }: MappingFi
         <Footer>
           <Button $variant="secondary" onClick={onBack}>
             ← Back to Cropping
+          </Button>
+          <Button onClick={downloadFinalImage}>
+            📥 Download Final Image
           </Button>
         </Footer>
       </Container>
