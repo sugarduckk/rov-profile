@@ -10,8 +10,8 @@ const LayoutTemplates: Template[] = [
     mapping: {
       topLeft: { x: 13, y: 11 },
       topRight: { x: 26, y: 23 },
-      bottomLeft: { x: 12, y: 87 },
-      bottomRight: { x: 26, y: 80 }
+      bottomLeft: { x: 12, y: 85 },
+      bottomRight: { x: 26, y: 79 }
     }
   },
   {
@@ -20,8 +20,8 @@ const LayoutTemplates: Template[] = [
     mapping: {
       topLeft: { x: 13, y: 11 },
       topRight: { x: 26, y: 23 },
-      bottomLeft: { x: 12, y: 87 },
-      bottomRight: { x: 26, y: 80 }
+      bottomLeft: { x: 12, y: 85 },
+      bottomRight: { x: 26, y: 79 }
     }
   },
   {
@@ -30,8 +30,8 @@ const LayoutTemplates: Template[] = [
     mapping: {
       topLeft: { x: 13, y: 11 },
       topRight: { x: 26, y: 23 },
-      bottomLeft: { x: 12, y: 87 },
-      bottomRight: { x: 26, y: 80 }
+      bottomLeft: { x: 12, y: 85 },
+      bottomRight: { x: 26, y: 79 }
     }
   }
 ];
