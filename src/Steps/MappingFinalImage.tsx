@@ -611,14 +611,163 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack, onReset }: 
 
   const downloadFinalImage = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const ctx = canvas?.getContext('2d');
+    const templateImg = templateImageRef.current;
+    const croppedImg = croppedImageRef.current;
 
-    // Create a download link
+    if (!canvas || !ctx || !templateImg || !croppedImg || !templateLoaded || !croppedImageLoaded) {
+      return;
+    }
+
+    // Create a temporary canvas for clean export (without corner circles)
+    const exportCanvas = document.createElement('canvas');
+    const exportCtx = exportCanvas.getContext('2d');
+    if (!exportCtx) return;
+
+    // Set export canvas size to match the original canvas
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+
+    // Clear the export canvas
+    exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Convert percentage points to pixel coordinates
+    const points = {
+      topLeft: { x: (mappingPoints.topLeft.x / 100) * exportCanvas.width, y: (mappingPoints.topLeft.y / 100) * exportCanvas.height },
+      topRight: { x: (mappingPoints.topRight.x / 100) * exportCanvas.width, y: (mappingPoints.topRight.y / 100) * exportCanvas.height },
+      bottomLeft: { x: (mappingPoints.bottomLeft.x / 100) * exportCanvas.width, y: (mappingPoints.bottomLeft.y / 100) * exportCanvas.height },
+      bottomRight: { x: (mappingPoints.bottomRight.x / 100) * exportCanvas.width, y: (mappingPoints.bottomRight.y / 100) * exportCanvas.height }
+    };
+
+    // Replicate the same drawing logic as the main canvas but WITHOUT corner circles
+    exportCtx.imageSmoothingEnabled = true;
+    exportCtx.imageSmoothingQuality = 'high';
+    exportCtx.globalCompositeOperation = 'source-over';
+
+    const TL = points.topLeft;
+    const TR = points.topRight;
+    const BL = points.bottomLeft;
+    const BR = points.bottomRight;
+
+    // Bilinear interpolation from unit square (s,t) to destination quad
+    const interpolateQuad = (s: number, t: number) => {
+      const x = (1 - s) * (1 - t) * TL.x + s * (1 - t) * TR.x + (1 - s) * t * BL.x + s * t * BR.x;
+      const y = (1 - s) * (1 - t) * TL.y + s * (1 - t) * TR.y + (1 - s) * t * BL.y + s * t * BR.y;
+      return { x, y };
+    };
+
+    // Calculate affine transform matrix for triangle mapping
+    const calculateTriangleTransform = (
+      src: { x: number; y: number; }[],
+      dst: { x: number; y: number; }[]
+    ) => {
+      const [s0, s1, s2] = src;
+      const [d0, d1, d2] = dst;
+
+      const denom = s0.x * (s1.y - s2.y) + s1.x * (s2.y - s0.y) + s2.x * (s0.y - s1.y);
+      if (Math.abs(denom) < 1e-10) return null; // Degenerate triangle
+
+      const a = (d0.x * (s1.y - s2.y) + d1.x * (s2.y - s0.y) + d2.x * (s0.y - s1.y)) / denom;
+      const b = (d0.y * (s1.y - s2.y) + d1.y * (s2.y - s0.y) + d2.y * (s0.y - s1.y)) / denom;
+      const c = (d0.x * (s2.x - s1.x) + d1.x * (s0.x - s2.x) + d2.x * (s1.x - s0.x)) / denom;
+      const d = (d0.y * (s2.x - s1.x) + d1.y * (s0.x - s2.x) + d2.y * (s1.x - s0.x)) / denom;
+      const e = (d0.x * (s1.x * s2.y - s2.x * s1.y) + d1.x * (s2.x * s0.y - s0.x * s2.y) + d2.x * (s0.x * s1.y - s1.x * s0.y)) / denom;
+      const f = (d0.y * (s1.x * s2.y - s2.x * s1.y) + d1.y * (s2.x * s0.y - s0.x * s2.y) + d2.y * (s0.x * s1.y - s1.x * s0.y)) / denom;
+
+      return { a, b, c, d, e, f };
+    };
+
+    const imgWidth = croppedImg.naturalWidth || croppedImg.width;
+    const imgHeight = croppedImg.naturalHeight || croppedImg.height;
+
+    // Use the same subdivision and overlap settings
+    const SUBDIVISIONS = 24;
+    const OVERLAP_PERCENT = 0.02;
+
+    // Draw overlapping quads (same logic as main canvas)
+    for (let row = 0; row < SUBDIVISIONS; row++) {
+      for (let col = 0; col < SUBDIVISIONS; col++) {
+        const s0 = col / SUBDIVISIONS;
+        const s1 = (col + 1) / SUBDIVISIONS;
+        const t0 = row / SUBDIVISIONS;
+        const t1 = (row + 1) / SUBDIVISIONS;
+
+        const s0Expanded = Math.max(0, s0 - OVERLAP_PERCENT);
+        const s1Expanded = Math.min(1, s1 + OVERLAP_PERCENT);
+        const t0Expanded = Math.max(0, t0 - OVERLAP_PERCENT);
+        const t1Expanded = Math.min(1, t1 + OVERLAP_PERCENT);
+
+        const srcX = s0Expanded * imgWidth;
+        const srcY = t0Expanded * imgHeight;
+        const srcW = (s1Expanded - s0Expanded) * imgWidth;
+        const srcH = (t1Expanded - t0Expanded) * imgHeight;
+
+        const dstTL = interpolateQuad(s0Expanded, t0Expanded);
+        const dstTR = interpolateQuad(s1Expanded, t0Expanded);
+        const dstBL = interpolateQuad(s0Expanded, t1Expanded);
+        const dstBR = interpolateQuad(s1Expanded, t1Expanded);
+
+        // Triangle 1: TL -> TR -> BR
+        const srcTri1 = [
+          { x: srcX, y: srcY },
+          { x: srcX + srcW, y: srcY },
+          { x: srcX + srcW, y: srcY + srcH }
+        ];
+        const dstTri1 = [dstTL, dstTR, dstBR];
+
+        const transform1 = calculateTriangleTransform(srcTri1, dstTri1);
+        if (transform1) {
+          exportCtx.save();
+
+          const expansion = 2;
+          exportCtx.beginPath();
+          exportCtx.moveTo(dstTri1[0].x - expansion, dstTri1[0].y - expansion);
+          exportCtx.lineTo(dstTri1[1].x + expansion, dstTri1[1].y - expansion);
+          exportCtx.lineTo(dstTri1[2].x + expansion, dstTri1[2].y + expansion);
+          exportCtx.closePath();
+          exportCtx.clip();
+
+          exportCtx.setTransform(transform1.a, transform1.b, transform1.c, transform1.d, transform1.e, transform1.f);
+          exportCtx.drawImage(croppedImg, 0, 0);
+          exportCtx.restore();
+        }
+
+        // Triangle 2: TL -> BR -> BL
+        const srcTri2 = [
+          { x: srcX, y: srcY },
+          { x: srcX + srcW, y: srcY + srcH },
+          { x: srcX, y: srcY + srcH }
+        ];
+        const dstTri2 = [dstTL, dstBR, dstBL];
+
+        const transform2 = calculateTriangleTransform(srcTri2, dstTri2);
+        if (transform2) {
+          exportCtx.save();
+
+          const expansion = 2;
+          exportCtx.beginPath();
+          exportCtx.moveTo(dstTri2[0].x - expansion, dstTri2[0].y - expansion);
+          exportCtx.lineTo(dstTri2[1].x + expansion, dstTri2[1].y + expansion);
+          exportCtx.lineTo(dstTri2[2].x - expansion, dstTri2[2].y + expansion);
+          exportCtx.closePath();
+          exportCtx.clip();
+
+          exportCtx.setTransform(transform2.a, transform2.b, transform2.c, transform2.d, transform2.e, transform2.f);
+          exportCtx.drawImage(croppedImg, 0, 0);
+          exportCtx.restore();
+        }
+      }
+    }
+
+    // Draw template at exact canvas size (1:1 ratio) - NO corner circles!
+    exportCtx.drawImage(templateImg, 0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Create download link
     const link = document.createElement('a');
     link.download = `profile-mapping-${selectedTemplate?.name || 'template'}-${Date.now()}.png`;
 
-    // Convert canvas to blob and create download URL
-    canvas.toBlob((blob) => {
+    // Convert the clean export canvas to blob and download
+    exportCanvas.toBlob((blob) => {
       if (blob) {
         const url = URL.createObjectURL(blob);
         link.href = url;
@@ -626,7 +775,7 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack, onReset }: 
         URL.revokeObjectURL(url);
       }
     }, 'image/png', 1.0);
-  }, [selectedTemplate?.name]);
+  }, [selectedTemplate?.name, mappingPoints, templateLoaded, croppedImageLoaded]);
 
   if (!selectedTemplate || !croppedImage) {
     return (
@@ -841,11 +990,11 @@ const MappingFinalImage = ({ selectedTemplate, croppedImage, onBack, onReset }: 
         </ContentArea>
 
         <Footer>
-          <Button variant="primary" size="lg" fullWidth onClick={downloadFinalImage}>
-            📥 Download Final Image
-          </Button>
           <Button variant="secondary" size="lg" fullWidth onClick={onBack}>
             ← Back to Cropping
+          </Button>
+          <Button variant="primary" size="lg" fullWidth onClick={downloadFinalImage}>
+            📥 Download Final Image
           </Button>
           <Button variant="outline" size="lg" fullWidth onClick={onReset}>
             🔄 Start Over

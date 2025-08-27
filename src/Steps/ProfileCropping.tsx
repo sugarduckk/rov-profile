@@ -380,11 +380,11 @@ const ProfileCropping = ({ profileImageUrl, setCroppedImage, onNext, onBack }: P
         </PreviewSection>
 
         <Footer>
-          <Button variant="primary" size="lg" fullWidth onClick={handleNext}>
-            Continue to Final Mapping
-          </Button>
           <Button variant="secondary" size="lg" fullWidth onClick={onBack}>
             ← Back to Upload
+          </Button>
+          <Button variant="primary" size="lg" fullWidth onClick={handleNext}>
+            Continue to Final Mapping
           </Button>
         </Footer>
       </Container>
